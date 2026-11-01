@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Block access to sensitive files
+    # This prevents anyone from viewing your .env, database dumps, or text files
+    <FilesMatch "^\.env|\.sql$|\.txt$|composer\.(json|lock)$|artisan$">
+        Require all denied
+    </FilesMatch>
+
+    # 2. Redirect all requests to the public folder
+    # This ensures the application runs securely from the 'public' directory
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# 3. Disable directory listing globally
+# This stops the exact "Index of /" screen shown in your image
+Options -Indexes
+
+# 4. Block access to hidden files (files starting with a dot)
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
