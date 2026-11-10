@@ -8,3 +8,9 @@
 .env.production
 .phpunit.result.cache
 *.zip
+/database/*.sqlite
+/database/*.sqlite-*
+/storage/app/*.sqlite*
+/storage/logs/*.log
+/storage/app/private/*
+!/storage/app/private/.gitignore

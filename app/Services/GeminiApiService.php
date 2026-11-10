@@ -2,141 +2,95 @@
 
 namespace App\Services;
 
-use Exception;
+use App\Services\Exceptions\HumanizationException;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
+use JsonException;
+use Throwable;
 
 class GeminiApiService
 {
-    protected ?string $apiKey;
-    protected string $model;
-    protected string $baseUrl;
+    private ?string $apiKey;
+    private string $model;
+    private string $baseUrl;
 
     public function __construct(?string $apiKey = null, ?string $model = null, ?string $baseUrl = null)
     {
-        try {
-            $configKey = function_exists('config') ? config('services.gemini.api_key') : null;
-            $configModel = function_exists('config') ? config('services.gemini.model') : null;
-            $configUrl = function_exists('config') ? config('services.gemini.base_url') : null;
-        } catch (\Throwable $e) {
-            $configKey = null;
-            $configModel = null;
-            $configUrl = null;
-        }
-
-        $this->apiKey = $apiKey ?: ($configKey ?: env('GEMINI_API_KEY'));
-        $this->model = $model ?: ($configModel ?: env('GEMINI_MODEL', 'gemini-1.5-flash'));
-        $this->baseUrl = $baseUrl ?: ($configUrl ?: env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com/v1beta'));
+        $this->apiKey = $apiKey ?? config('services.gemini.api_key');
+        $this->model = $model ?? (string) config('services.gemini.model', 'gemini-3.8-flash');
+        $this->baseUrl = rtrim($baseUrl ?? (string) config('services.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
     }
 
-    /**
-     * Check whether an API key has been provided.
-     */
     public function isConfigured(): bool
     {
-        return !empty($this->apiKey);
+        return is_string($this->apiKey) && trim($this->apiKey) !== '';
     }
 
-    /**
-     * Generate raw text using Gemini.
-     */
-    public function generateText(string $prompt, ?string $systemInstruction = null, float $temperature = 0.7): string
+    public function model(): string
     {
-        if (!$this->isConfigured()) {
-            throw new Exception("Gemini API key is missing. Please set GEMINI_API_KEY in your .env file.");
-        }
-
-        $url = "{$this->baseUrl}/models/{$this->model}:generateContent?key={$this->apiKey}";
-
-        $payload = [
-            'contents' => [
-                [
-                    'role' => 'user',
-                    'parts' => [
-                        ['text' => $prompt]
-                    ]
-                ]
-            ],
-            'generationConfig' => [
-                'temperature' => $temperature,
-            ]
-        ];
-
-        if ($systemInstruction) {
-            $payload['system_instruction'] = [
-                'parts' => [
-                    ['text' => $systemInstruction]
-                ]
-            ];
-        }
-
-        $response = Http::timeout(45)->post($url, $payload);
-
-        if (!$response->successful()) {
-            Log::error('Gemini API Error: ' . $response->body());
-            throw new Exception('Gemini API request failed: ' . ($response->json('error.message') ?? $response->status()));
-        }
-
-        $data = $response->json();
-        $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
-
-        return trim($text);
+        return $this->model;
     }
 
-    /**
-     * Generate structured JSON output using Gemini.
-     */
+    public function generateText(string $prompt, ?string $systemInstruction = null, float $temperature = 0.4): string
+    {
+        return $this->request($prompt, $systemInstruction, $temperature, false);
+    }
+
     public function generateJson(string $prompt, ?string $systemInstruction = null, float $temperature = 0.2): array
     {
+        $raw = $this->request($prompt, $systemInstruction, $temperature, true);
+        try {
+            $result = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            throw new HumanizationException('The writing provider returned an invalid response. Please try again.', 'generation');
+        }
+        if (!is_array($result)) {
+            throw new HumanizationException('The writing provider returned an invalid response. Please try again.', 'generation');
+        }
+        return $result;
+    }
+
+    private function request(string $prompt, ?string $instruction, float $temperature, bool $json): string
+    {
         if (!$this->isConfigured()) {
-            throw new Exception("Gemini API key is missing. Please set GEMINI_API_KEY in your .env file.");
+            throw new HumanizationException('The writing provider is not configured. Add its API key in server configuration to enable rewriting.', 'generation');
         }
-
-        $url = "{$this->baseUrl}/models/{$this->model}:generateContent?key={$this->apiKey}";
-
-        $payload = [
-            'contents' => [
-                [
-                    'role' => 'user',
-                    'parts' => [
-                        ['text' => $prompt]
-                    ]
-                ]
-            ],
-            'generationConfig' => [
-                'temperature' => $temperature,
-                'responseMimeType' => 'application/json',
-            ]
-        ];
-
-        if ($systemInstruction) {
-            $payload['system_instruction'] = [
-                'parts' => [
-                    ['text' => $systemInstruction]
-                ]
-            ];
+        $payload = ['contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]],
+            'generationConfig' => ['maxOutputTokens' => max(256, (int) config('services.gemini.max_output_tokens', 8192))]];
+        // Gemini 3+ uses model-recommended sampling; omit legacy sampling controls.
+        if (!preg_match('/gemini-(?:[3-9]|[1-9]\d)/i', $this->model)) {
+            $payload['generationConfig']['temperature'] = max(0, min(1, $temperature));
         }
-
-        $response = Http::timeout(45)->post($url, $payload);
-
+        if ($instruction) {
+            $payload['systemInstruction'] = ['parts' => [['text' => $instruction]]];
+        }
+        if ($json) {
+            $payload['generationConfig']['responseMimeType'] = 'application/json';
+        }
+        try {
+            $response = Http::acceptJson()->withHeaders(['x-goog-api-key' => $this->apiKey])
+                ->withOptions(['allow_redirects' => false])
+                ->connectTimeout(10)->timeout(max(1, (int) config('services.gemini.timeout', 60)))
+                ->post($this->baseUrl.'/models/'.rawurlencode($this->model).':generateContent', $payload);
+        } catch (Throwable) {
+            throw new HumanizationException('The writing provider could not be reached. Your original text is unchanged.', 'generation');
+        }
         if (!$response->successful()) {
-            Log::error('Gemini API Error (JSON): ' . $response->body());
-            throw new Exception('Gemini API request failed: ' . ($response->json('error.message') ?? $response->status()));
+            throw new HumanizationException('The writing provider could not complete the request. Check server configuration and allowance, then try again.', 'generation');
         }
-
-        $rawText = $response->json('candidates.0.content.parts.0.text') ?? '{}';
-        
-        // Strip markdown fences if present
-        $cleaned = preg_replace('/^```(?:json)?\s*/i', '', trim($rawText));
-        $cleaned = preg_replace('/\s*```$/i', '', $cleaned);
-
-        $decoded = json_decode($cleaned, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            Log::warning('Gemini JSON decode error: ' . json_last_error_msg() . ' Raw: ' . $rawText);
-            throw new Exception('Failed to decode structured JSON from Gemini response.');
+        $candidate = $response->json('candidates.0');
+        if (!is_array($candidate) || ($candidate['finishReason'] ?? null) !== 'STOP') {
+            throw new HumanizationException('The writing provider did not return a complete draft. Please try again with a shorter passage.', 'generation');
         }
-
-        return $decoded;
+        $parts = [];
+        foreach ($candidate['content']['parts'] ?? [] as $part) {
+            if (is_string($part['text'] ?? null) && !($part['thought'] ?? false)) {
+                $parts[] = $part['text'];
+            }
+        }
+        $text = trim(implode('', $parts));
+        if ($text === '') {
+            throw new HumanizationException('The writing provider returned an empty draft. Your original text is unchanged.', 'generation');
+        }
+        return $text;
     }
 }

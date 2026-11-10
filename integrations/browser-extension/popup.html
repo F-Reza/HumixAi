@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>HumixAi companion</title><link rel="stylesheet" href="popup.css"></head>
+<body><main>
+<header><strong>HumixAi</strong><span>Writing companion</span></header>
+<details open><summary>Connect your workspace</summary><label for="appUrl">HumixAi app URL</label><input id="appUrl" type="url" placeholder="https://your-humixai.example" autocomplete="off"><label for="token">Scoped HumixAi API token</label><input id="token" type="password" autocomplete="off" spellcheck="false"><p>Use a workspace token, never a Google or GPTZero key. It stays in extension session memory until browser restart or Clear connection.</p><div class="row"><button id="saveSettings">Allow app host & connect</button><button id="clearSettings" class="secondary">Clear connection</button></div></details>
+<button id="capture" class="secondary">Use selected text from this tab</button><label for="source">Text to review</label><textarea id="source" rows="7" spellcheck="true" placeholder="Select text in the page, then click the selection button, or paste your draft here."></textarea><p id="count">0 / 60,000 characters</p>
+<div class="row"><label>Tone<select id="mode"><option value="professional">Professional</option><option value="academic">Academic</option><option value="casual">Casual</option><option value="marketing">Marketing</option></select></label><label>Strength<select id="strength"><option value="light">Light</option><option value="balanced" selected>Balanced</option><option value="strong">Strong</option></select></label></div>
+<label class="consent"><input id="consent" type="checkbox"><span>I approve sending this draft to my HumixAi server and its configured providers for the action I choose.</span></label>
+<div class="row"><button data-action="detect">Detect</button><button data-action="humanize">Humanize</button><button data-action="combo">Analyze & improve</button></div>
+<div class="row"><button id="resume" class="secondary" disabled>Resume last job</button><button id="stop" class="secondary" disabled>Stop waiting</button></div>
+<p id="status" role="status" aria-live="polite">No connection configured. No text has been sent.</p><label for="result">Result for your review</label><textarea id="result" rows="8" readonly></textarea><button id="copy" class="secondary" disabled>Copy result</button>
+<p class="fine">Closing this popup stops polling, while submitted jobs may continue. Text is never inserted into a page automatically. Scores and unavailable states come directly from your app.</p>
+</main><script type="module" src="popup.mjs"></script></body></html>

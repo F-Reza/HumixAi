@@ -12,10 +12,20 @@
         </testsuite>
     </testsuites>
     <php>
-        <env name="APP_ENV" value="testing"/>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="GEMINI_API_KEY" value="" force="true"/>
+        <env name="GPTZERO_API_KEY" value="" force="true"/>
+        <env name="WALTER_API_KEY" value="" force="true"/>
+        <env name="STRIPE_SECRET_KEY" value="" force="true"/>
+        <env name="STRIPE_WEBHOOK_SECRET" value="" force="true"/>
+        <env name="BILLING_ENABLED" value="false" force="true"/>
+        <env name="STUDIO_QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="CACHE_STORE" value="array" force="true"/>
         <env name="APP_KEY" value="base64:eZlY7P62y6H9YpQw6Qn3v+xK+r1TjM7QkZbW9y5NlP0="/>
         <env name="CACHE_DRIVER" value="array"/>
-        <env name="SESSION_DRIVER" value="array"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
     </php>
 </phpunit>

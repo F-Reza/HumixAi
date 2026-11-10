@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "HumixAi Writing Companion",
+  "version": "1.0.0",
+  "description": "Review selected text through your own HumixAi workspace. No automatic page scanning.",
+  "minimum_chrome_version": "112",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "action": { "default_popup": "popup.html", "default_title": "HumixAi Writing Companion" },
+  "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'none'" }
+}

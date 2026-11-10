@@ -1,8 +1,8 @@
 {
-    "name": "walterai/ai-detector-humanizer",
+    "name": "humixai/studio",
     "type": "project",
-    "description": "Standalone AI Detector and Humanizer powered by Google Gemini API and Statistical Burstiness NLP.",
-    "keywords": ["ai-detector", "humanizer", "gemini-api", "turnitin-bypass", "walter-writes"],
+    "description": "HumixAi writing studio with real AI detection, controlled editing, preservation checks and document history.",
+    "keywords": ["ai-detector", "writing", "humanizer", "gemini", "gptzero", "laravel"],
     "license": "MIT",
     "require": {
         "php": "^8.2",

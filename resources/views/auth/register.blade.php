@@ -1,0 +1,8 @@
+@extends('auth.base')
+@section('title', 'Create your workspace')
+@section('content')
+<span class="eyebrow">ROOM FOR YOUR NEXT IDEA</span><h2>Make yourself at home.</h2><p>Save your drafts, review your revisions, and bring your writing into focus.</p>
+<div class="auth-error" id="authError" role="alert" @if(!$errors->any()) hidden @endif>@if($errors->any()){{ $errors->first() }}@endif</div>
+<form action="/register" method="post" id="authForm">@csrf<label for="name">Your name</label><input type="text" name="name" id="name" autocomplete="name" maxlength="100" placeholder="What should we call you?" value="{{ old('name') }}" required autofocus><label for="email">Email address</label><input type="email" name="email" id="email" autocomplete="username" maxlength="254" placeholder="you@example.com" value="{{ old('email') }}" required><label for="password">Password</label><input type="password" name="password" id="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="At least 10 characters" required><label for="password_confirmation">Confirm password</label><input type="password" name="password_confirmation" id="password_confirmation" autocomplete="new-password" minlength="10" maxlength="128" placeholder="One more time" required><p class="muted" style="margin-top:17px;font-size:12px">Your drafts stay in your account. You'll choose whether to send text to connected AI providers before using AI actions.</p><button class="button button-primary auth-submit" type="submit">Create your workspace <span>↗</span></button></form>
+<div class="auth-switch">Already have an account? <a href="/login">Welcome back</a></div>
+@endsection
