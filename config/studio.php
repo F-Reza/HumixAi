@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'ocr_enabled' => (bool) env('STUDIO_OCR_ENABLED', false),
+    'tesseract_path' => env('TESSERACT_PATH', 'tesseract'),
     'max_characters' => (int) env('STUDIO_MAX_CHARACTERS', 60000),
     'max_file_kb' => (int) env('STUDIO_MAX_FILE_KB', 6144),
     'import_max_bytes' => (int) env('STUDIO_MAX_FILE_KB', 6144) * 1024,

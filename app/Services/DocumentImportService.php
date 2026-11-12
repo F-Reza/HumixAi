@@ -15,18 +15,19 @@ class DocumentImportService
 {
     public function capabilities(): array
     {
+        $ocrLanguages = app(OcrService::class)->languages();
         $pdf = $this->pdfBinary() !== null;
         $docx = class_exists(ZipArchive::class) && class_exists(DOMDocument::class);
         return [
-            'formats' => array_values(array_filter(['txt', $docx ? 'docx' : null, $pdf ? 'pdf' : null])),
+            'formats' => array_values(array_filter(['txt', $docx ? 'docx' : null, $pdf ? 'pdf' : null, $ocrLanguages ? 'png' : null, $ocrLanguages ? 'jpg' : null, $ocrLanguages ? 'jpeg' : null])),
             'txt' => true, 'docx' => $docx, 'pdf' => $pdf, 'pdf_available' => $pdf,
-            'url' => false, 'ocr' => false,
+            'url' => false, 'ocr' => $ocrLanguages !== [], 'ocr_languages' => $ocrLanguages,
             'max_bytes' => (int) config('studio.import_max_bytes', 5 * 1024 * 1024),
             'max_characters' => (int) config('studio.max_characters', 100000),
         ];
     }
 
-    public function preview(UploadedFile $file): array
+    public function preview(UploadedFile $file, string $language = 'auto'): array
     {
         $limit = (int) config('studio.import_max_bytes', 5 * 1024 * 1024);
         if (!$file->isValid() || $file->getSize() > $limit) {
@@ -42,11 +43,12 @@ class DocumentImportService
             'txt' => $this->plainText($file->getRealPath()),
             'docx' => $this->docxText($file->getRealPath()),
             'pdf' => $this->pdfText($file->getRealPath()),
+            'png', 'jpg', 'jpeg' => app(OcrService::class)->extract($file->getRealPath(), $language),
         };
         $text = str_replace(["\r\n", "\r"], "\n", $text);
         $text = trim($text);
         if ($text === '') {
-            $this->invalid('No readable text was found. Scanned images require OCR, which is not available.');
+            $this->invalid(__('No readable text was found. For scanned PDFs, export a page as PNG or JPEG and use image OCR when available.'));
         }
         if (!mb_check_encoding($text, 'UTF-8') || str_contains($text, "\0")) {
             $this->invalid('The file must contain valid UTF-8 text.');
@@ -60,7 +62,7 @@ class DocumentImportService
             'filename' => mb_substr(basename(str_replace('\\', '/', $file->getClientOriginalName())), 0, 200),
             'format' => $extension,
             'warnings' => $extension === 'docx' ? ['Imports the document body text. Images, comments, headers and visual formatting are not imported.']
-                : ($extension === 'pdf' ? ['PDF reading order may differ from its visual layout. Review the preview before scanning.'] : []),
+                : ($extension === 'pdf' ? ['PDF reading order may differ from its visual layout. Review the preview before scanning.'] : (in_array($extension, ['png', 'jpg', 'jpeg'], true) ? [__('OCR may misread words, numbers and reading order. Correct this preview before scanning.')] : [])),
             'capabilities' => $this->capabilities(),
         ];
     }

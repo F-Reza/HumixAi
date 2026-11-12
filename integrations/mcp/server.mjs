@@ -9,7 +9,7 @@ const LEGACY = ['2025-11-25', '2025-06-18', '2024-11-05'];
 const info = { name: 'humixai-local-bridge', version: '1.0.0' };
 const text = { type: 'string', minLength: 15, maxLength: 60000 };
 const consent = { type: 'boolean', const: true, description: 'User explicitly approved sending this text or retrieving this private result. Never assume consent.' };
-const language = { type: 'string', enum: ['auto', 'en', 'bn', 'es', 'fr', 'de', 'pt'] };
+const language = { type: 'string', enum: ['auto', 'en', 'bn', 'hi', 'ur', 'ar', 'ne', 'es', 'fr', 'de', 'pt'] };
 const rewriteProperties = {
   mode: { type: 'string', enum: ['professional', 'academic', 'casual', 'marketing'] }, language,
   strength: { type: 'string', enum: ['light', 'balanced', 'strong'] }, length: { type: 'string', enum: ['shorter', 'similar', 'longer'] },

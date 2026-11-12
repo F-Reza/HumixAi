@@ -1,0 +1,10 @@
+@extends('voice.layout')
+@section('title', __('Write and replay'))
+@section('content')
+<div id="writingRecorder" data-record-id="{{ $record->id }}" data-next-sequence="{{ $record->frame_count }}">
+<h1>{{ $record->title }}</h1><p>{{ __('Snapshots are captured about every five seconds while you edit. This is a draft replay, not a complete keystroke recording or proof of authorship.') }}</p><p>{{ __('Edits here do not overwrite the linked studio document. Copy your finished draft back into the studio when ready.') }}</p>
+<label><input type="checkbox" id="recordingConsent">{{ __('Record my edits in this writing record. I can stop or delete the record at any time.') }}</label><div class="actions"><button id="startRecording" type="button">{{ __('Start recording') }}</button><button id="stopRecording" type="button" disabled>{{ __('Stop recording') }}</button><button id="copyRecordedDraft" type="button">{{ __('Copy draft') }}</button><a href="/writing-records/{{ $record->id }}/export">{{ __('Export writing record') }}</a></div><p id="recordingStatus" role="status">{{ __('Recording is paused.') }}</p><label>{{ __('Your draft') }}<textarea id="recordingText" dir="auto" rows="14" maxlength="60000">{{ $latest?->text }}</textarea></label>
+<hr><h2>{{ __('Replay and contribution report') }}</h2><button type="button" id="loadReplay">{{ __('Load saved snapshots') }}</button><div id="replayPanel" hidden><label>{{ __('Snapshot') }}<input id="replayPosition" type="range" min="0" max="0" value="0"></label><div class="actions"><button type="button" id="playReplay">{{ __('Play replay') }}</button><button type="button" id="pauseReplay">{{ __('Pause') }}</button></div><p id="replayCaption" aria-live="polite"></p><pre id="replayText" dir="auto" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre><p id="recordingNotice"></p><div id="contributionCounts"></div></div>
+<form method="post" action="/writing-records/{{ $record->id }}">@csrf @method('DELETE')<button>{{ __('Delete writing record') }}</button></form><a href="/writing-records">{{ __('Writing records') }}</a></div>
+<script src="{{ asset('assets/writing-recorder.js') }}" defer></script>
+@endsection

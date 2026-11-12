@@ -175,8 +175,8 @@ class DocumentController extends Controller
 
     private static function reportText(array $snapshot): string
     {
-        $lines = ['HumixAi writing report', (string) ($snapshot['title'] ?? ''), 'Exported: '.($snapshot['exported_at'] ?? now()->toIso8601String()),
-            '', 'ORIGINAL TEXT', (string) ($snapshot['source_text'] ?? ''), '', 'CURRENT TEXT', (string) ($snapshot['current_text'] ?? ''), '', 'RECORDED ANALYSIS'];
+        $lines = [__('HumixAi writing report'), (string) ($snapshot['title'] ?? ''), __('Exported: ').($snapshot['exported_at'] ?? now()->toIso8601String()),
+            '', __('ORIGINAL TEXT'), (string) ($snapshot['source_text'] ?? ''), '', __('CURRENT TEXT'), (string) ($snapshot['current_text'] ?? ''), '', __('RECORDED ANALYSIS')];
         foreach ($snapshot['revisions'] ?? [] as $revision) {
             if (!empty($revision['result'])) {
                 $lines[] = ($revision['action'] ?? 'analysis').' — '.($revision['created_at'] ?? '');
@@ -204,7 +204,7 @@ class DocumentController extends Controller
         if ($settings !== null) {
             \Illuminate\Support\Facades\Validator::make(['settings' => $settings], [
                 'settings.mode' => 'sometimes|string|in:standard,professional,academic,casual,marketing',
-                'settings.language' => 'sometimes|string|in:auto,en,bn,es,fr,de,pt',
+                'settings.language' => 'sometimes|string|in:auto,en,bn,hi,ur,ar,ne,es,fr,de,pt',
                 'settings.strength' => 'sometimes|string|in:light,balanced,strong',
                 'settings.length' => 'sometimes|string|in:shorter,similar,longer',
                 'settings.protected_terms' => 'sometimes|array|max:40',

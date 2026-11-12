@@ -11,13 +11,14 @@ class ProtectedTextService
     {
         $patterns = [
             '/```[\s\S]*?```/u',
+            '/«[^»\r\n]+»/u',
             '/https?:\/\/[^\s<>]+|\bdoi:\s*[^\s<>]+/iu',
             '/[\p{Lu}][\p{L}\p{M}\x{2019}\x{0027}-]+(?:\s+(?:et al\.|and\s+[\p{Lu}][\p{L}\p{M}-]+))?\s*\([^()\r\n]*\p{N}{4}[^()\r\n]*\)/u',
             '/\([^()\r\n]*\p{N}{4}[^()\r\n]*\)/u',
             '/\[\p{N}+(?:\s*[-\x{2013}\x{2014},;]\s*\p{N}+)*\]/u',
             '/"[^"\r\n]+"|\x{201C}[^\x{201D}\r\n]+\x{201D}|\x{2018}[^\x{2019}\r\n]+\x{2019}/u',
             '/(?<!\p{L})\x{0027}[^\x{0027}\r\n]+\x{0027}(?!\p{L})/u',
-            '/(?<![\p{L}\p{M}])(?:not|never|no|without|cannot|[a-z]+n[\x{0027}\x{2019}]t|না|নয়|নয়|নেই|নন|হয়নি|হয়নি)(?![\p{L}\p{M}])/iu',
+            '/(?<![\p{L}\p{M}])(?:not|never|no|without|cannot|[a-z]+n[\x{0027}\x{2019}]t|না|নয়|নয়|নেই|নন|হয়নি|হয়নি|नहीं|मत|बिना|होइन|छैन|नभएको|نہیں|نہ|بغیر|لا|ليس|لم|لن|بدون|غير)(?![\p{L}\p{M}])/iu',
             '/\b(?:Dr|Mr|Mrs|Ms|Prof)\.?\s+[\p{Lu}][\p{L}\p{M}\x{2019}\x{0027}-]+(?:\s+[\p{Lu}][\p{L}\p{M}\x{2019}\x{0027}-]+)*/u',
             '/\b[A-Z]{2,}[0-9]*\b|\b[A-Z][a-z]+(?:[A-Z][A-Za-z]*)+\b/u',
             '/[+\x{2212}-]?\p{N}+(?:[.,:\/\x{2013}-]\p{N}+)*(?:\s?[%\x{2030}])?/u',
@@ -74,20 +75,20 @@ class ProtectedTextService
             $previous = $position;
         }
         if ($violations !== []) {
-            throw new HumanizationException('The draft changed protected content. Your original text is unchanged; try a lighter rewrite.', 'preservation', array_values(array_unique($violations)));
+            throw new HumanizationException(__('The draft changed protected content. Your original text is unchanged; try a lighter rewrite.'), 'preservation', array_values(array_unique($violations)));
         }
         $restored = strtr($rewritten, $map);
         if (preg_match('/__HUMIX_LOCK_[a-f0-9]+_\d+__/', $restored)) {
-            throw new HumanizationException('The draft contains an invalid protected-content marker. Please try again.', 'preservation', ['Unexpected protection marker.']);
+            throw new HumanizationException(__('The draft contains an invalid protected-content marker. Please try again.'), 'preservation', ['Unexpected protection marker.']);
         }
         foreach (array_unique(array_values($map)) as $passage) {
             if ($this->occurrences($original, $passage) !== $this->occurrences($restored, $passage)) {
-                throw new HumanizationException('The draft duplicated or removed protected content. Your original text is unchanged.', 'preservation', ['Protected passage counts differ from the original.']);
+                throw new HumanizationException(__('The draft duplicated or removed protected content. Your original text is unchanged.'), 'preservation', ['Protected passage counts differ from the original.']);
             }
         }
         // Detect newly introduced numbers, including numbers outside the locked spans.
         if ($this->numbers($original) !== $this->numbers($restored)) {
-            throw new HumanizationException('The draft changed or introduced numbers. Your original text is unchanged; review the passage and try again.', 'preservation', ['Numbers differ from the original text.']);
+            throw new HumanizationException(__('The draft changed or introduced numbers. Your original text is unchanged; review the passage and try again.'), 'preservation', ['Numbers differ from the original text.']);
         }
         return ['text' => $restored, 'preservation' => ['passed' => true, 'violations' => [], 'protected_count' => count($map)]];
     }

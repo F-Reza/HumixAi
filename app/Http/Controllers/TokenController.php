@@ -24,7 +24,7 @@ class TokenController extends Controller
             'expires_in_days' => 'sometimes|integer|min:1|max:365',
         ]);
         if (ApiToken::where('user_id', $request->user()->id)->whereNull('revoked_at')->where('expires_at', '>', now())->count() >= 20) {
-            return response()->json(['success' => false, 'message' => 'Revoke an existing token before creating another.'], 422);
+            return response()->json(['success' => false, 'message' => __('Revoke an existing token before creating another.')], 422);
         }
         $plain = 'hxi_'.Str::random(64);
         $token = ApiToken::create([

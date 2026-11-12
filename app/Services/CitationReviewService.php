@@ -16,7 +16,7 @@ class CitationReviewService
     {
         $result = [
             'status' => 'unavailable', 'provider' => 'gptzero', 'review_type' => 'citations',
-            'summary' => 'Citation review is unavailable. No references were verified.', 'issues' => [],
+            'summary' => __('Citation review is unavailable. No references were verified.'), 'issues' => [],
             'model' => null, 'source_hash' => hash('sha256', $text),
             'reviewed_at' => now()->utc()->toIso8601String(),
             'evidence' => null,
@@ -39,23 +39,23 @@ class CitationReviewService
                 ->connectTimeout(10)->timeout(max(1, (int) config('services.gptzero.timeout', 45)))
                 ->post(rtrim((string) config('services.gptzero.base_url', 'https://api.gptzero.me'), '/').'/v2/bibliography-scan/text', ['document' => $text]);
             if (!$response->successful()) {
-                return array_replace($result, ['summary' => 'The bibliography provider could not complete the review. Check provider access and allowance, then try again. No references were verified.']);
+                return array_replace($result, ['summary' => __('The bibliography provider could not complete the review. Check provider access and allowance, then try again. No references were verified.')]);
             }
             if (strlen($response->body()) > 1000000) {
-                return array_replace($result, ['status' => 'error', 'summary' => 'The bibliography result exceeded the review size limit. No verification verdict is available.']);
+                return array_replace($result, ['status' => 'error', 'summary' => __('The bibliography result exceeded the review size limit. No verification verdict is available.')]);
             }
             $body = $response->json();
             if (!is_array($body) || $body === [] || array_is_list($body) || array_key_exists('error', $body)
                 || ($body['success'] ?? null) === false || in_array($body['status'] ?? null, ['error', 'failed', 'unavailable'], true)) {
-                return array_replace($result, ['status' => 'error', 'summary' => 'The bibliography provider returned an invalid result. No verification verdict is available.']);
+                return array_replace($result, ['status' => 'error', 'summary' => __('The bibliography provider returned an invalid result. No verification verdict is available.')]);
             }
             return array_replace($result, [
                 'status' => 'completed',
-                'summary' => 'GPTZero returned bibliography evidence. Inspect the provider JSON and original publications; HumixAi has not converted it into verification verdicts.',
+                'summary' => __('GPTZero returned bibliography evidence. Inspect the provider JSON and original publications; HumixAi has not converted it into verification verdicts.'),
                 'evidence' => ['format' => 'provider-json', 'data' => $body],
             ]);
         } catch (Throwable) {
-            return array_replace($result, ['summary' => 'The bibliography provider could not be reached. No references were verified.']);
+            return array_replace($result, ['summary' => __('The bibliography provider could not be reached. No references were verified.')]);
         }
     }
 }

@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\TextAnalysisService;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class DetectorUnitTest extends TestCase
 {

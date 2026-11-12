@@ -14,21 +14,23 @@ class AuthenticateApiToken
     {
         $plain = $request->bearerToken();
         if (!$plain || strlen($plain) > 150) {
-            return response()->json(['success' => false, 'message' => 'A valid API bearer token is required.'], 401);
+            return response()->json(['success' => false, 'message' => __('A valid API bearer token is required.')], 401);
         }
         $token = ApiToken::with('user')->where('token_hash', hash('sha256', $plain))
             ->whereNull('revoked_at')->where('expires_at', '>', now())->first();
         if (!$token || !$token->user) {
-            return response()->json(['success' => false, 'message' => 'The API token is invalid, expired, or revoked.'], 401);
+            return response()->json(['success' => false, 'message' => __('The API token is invalid, expired, or revoked.')], 401);
         }
         $required = $scope === 'rewrite' ? 'humanize' : $scope;
         if ($required && !in_array($required, $token->scopes ?? [], true)) {
-            return response()->json(['success' => false, 'message' => 'This token does not have the required scope.'], 403);
+            return response()->json(['success' => false, 'message' => __('This token does not have the required scope.')], 403);
         }
         Auth::setUser($token->user);
         $request->setUserResolver(fn () => $token->user);
         $request->attributes->set('api_token', $token);
+        app()->setLocale(\App\Support\Locales::normalize($request->header('X-Locale') ?: $token->user->locale));
         $token->forceFill(['last_used_at' => now()])->save();
+        abort_if($request->user()?->suspended_at, 403, __('This account is suspended.'));
         return $next($request);
     }
 }

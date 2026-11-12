@@ -13,9 +13,9 @@ class ContentReviewService
     {
         $result = [
             'status' => 'unavailable', 'provider' => 'gemini', 'review_type' => $type,
-            'summary' => 'AI writing feedback is currently unavailable.', 'issues' => [],
+            'summary' => __('AI writing feedback is currently unavailable.'), 'issues' => [],
             'model' => $this->gemini->model(), 'source_hash' => hash('sha256', $text),
-            'reviewed_at' => now()->utc()->toIso8601String(), 'feedback_label' => 'AI-generated advisory feedback',
+            'reviewed_at' => now()->utc()->toIso8601String(), 'feedback_label' => __('AI-generated advisory feedback'),
             'limitations' => [
                 'This is AI-generated feedback and may overlook issues or suggest incorrect changes.',
                 'No external sources are searched or verified. This is not a fact check, plagiarism scan or guarantee of guideline compliance.',
@@ -31,7 +31,7 @@ class ContentReviewService
             || !is_string($revised) || mb_strlen($revised, 'UTF-8') > $maxCharacters
             || ($type === 'guidelines' && trim($guidelines) === '')
             || ($type === 'meaning' && trim($revised) === '')) {
-            return array_replace($result, ['status' => 'error', 'summary' => 'Provide a supported review type and bounded text, including guidelines or revised text when required.']);
+            return array_replace($result, ['status' => 'error', 'summary' => __('Provide a supported review type and bounded text, including guidelines or revised text when required.')]);
         }
         if (!$this->gemini->isConfigured()) {
             return $result;
@@ -54,6 +54,7 @@ class ContentReviewService
             .($type === 'meaning' ? ' or revised_text' : '').", at most 1500 characters.\n"
             ."Categories are: ".implode(', ', $categories).". Message at most 2000 characters; suggestion at most 2000 characters and may be empty.\n"
             ."Return only issues supported by the submitted wording. If no issues are found, return an empty issues array; never describe that as proof of correctness.";
+        $instruction .= '\nWrite summary and issue messages in '.\App\Support\Locales::all()[\App\Support\Locales::normalize(app()->getLocale())].'. Keep excerpts exact and suggested replacement wording in the source language; never translate the document.';
         $input = ['original_text' => $text];
         if ($type === 'guidelines') {
             $input['editorial_guidelines'] = $guidelines;
@@ -65,10 +66,10 @@ class ContentReviewService
         try {
             $feedback = $this->gemini->generateJson(json_encode($input, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), $instruction);
         } catch (Throwable) {
-            return array_replace($result, ['summary' => 'The writing provider could not return feedback. Your document is unchanged.']);
+            return array_replace($result, ['summary' => __('The writing provider could not return feedback. Your document is unchanged.')]);
         }
         if (!$this->validFeedback($feedback, $text, $type === 'meaning' ? $revised : '', $categories)) {
-            return array_replace($result, ['status' => 'error', 'summary' => 'The provider returned feedback that could not be safely matched to the submitted text. No suggestions were applied.']);
+            return array_replace($result, ['status' => 'error', 'summary' => __('The provider returned feedback that could not be safely matched to the submitted text. No suggestions were applied.')]);
         }
         return array_replace($result, ['status' => 'completed', 'summary' => 'AI feedback: '.$feedback['summary'], 'issues' => $feedback['issues']]);
     }

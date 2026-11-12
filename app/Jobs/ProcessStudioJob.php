@@ -20,6 +20,8 @@ class ProcessStudioJob implements ShouldQueue
 
     public function handle(StudioRunner $runner): void
     {
+        app(\App\Services\Admin\SystemSettingsService::class)->apply();
+        app()->setLocale('en');
         $job = StudioJob::find($this->studioJobId);
         if (!$job || $job->status !== 'queued') { return; }
         $claimed = DB::transaction(function () use ($job) {
@@ -38,7 +40,8 @@ class ProcessStudioJob implements ShouldQueue
         if (!$claimed) { return; }
         try {
             $user = \App\Models\User::find($job->user_id);
-            if (!$user) { return; }
+            if (!$user || $user->suspended_at) { throw new \RuntimeException('Account unavailable.'); }
+            app()->setLocale(\App\Support\Locales::normalize($user->locale));
             $result = $runner->execute($user, $job->action, $job->payload, $job->reservation_id, function ($stage, $status, $message) use ($job) {
                 $job->update(['stage' => $stage.':'.$status]);
             });

@@ -23,12 +23,12 @@ class AiDetectorService
             'model_version' => config('services.gptzero.model_version') ?: null,
             'min_words' => max(1, (int) config('services.gptzero.min_words', 80)),
             'max_characters' => max(1, (int) config('services.gptzero.max_characters', 60000)),
-            'supported_languages' => array_values(array_intersect(['en', 'es', 'fr', 'de', 'pt'], (array) config('services.gptzero.languages', ['en', 'es', 'fr', 'de', 'pt']))),
+            'supported_languages' => array_values(array_intersect(['en', 'bn', 'hi', 'ur', 'ar', 'ne', 'es', 'fr', 'de', 'pt'], (array) config('services.gptzero.languages', ['en', 'bn', 'hi', 'ur', 'ar', 'ne', 'es', 'fr', 'de', 'pt']))),
             'score_type' => 'ai_class_probability',
-            'score_label' => 'Probability of GPTZero’s AI class',
+            'score_label' => __('Probability of GPTZero’s AI class'),
             'notes' => ['Configuration does not confirm provider connectivity or remaining quota.',
                 'An AI probability is not the percentage of words written by AI or proof of authorship.',
-                'Bengali writing statistics are available locally; Bengali authorship detection is not enabled.'],
+                'Multilingual detection uses the provider model. Accuracy has not been independently evaluated for these languages.'],
         ];
     }
 
@@ -41,11 +41,12 @@ class AiDetectorService
             'language' => $quality['language'], 'word_count' => $quality['word_count'],
             'character_count' => $quality['character_count'], 'analyzed_characters' => 0,
             'scanned_at' => now()->utc()->toIso8601String(),
-            'overall_score' => null, 'score_label' => 'Probability of GPTZero’s AI class',
+            'overall_score' => null, 'score_label' => __('Probability of GPTZero’s AI class'),
             'score_type' => 'ai_class_probability', 'classification' => null,
             'class_probabilities' => ['human' => null, 'mixed' => null, 'ai' => null],
             'confidence' => null, 'sentences' => $this->analysis->sentences($text),
-            'quality' => $quality, 'message' => 'Local writing statistics only. No external authorship scan was performed.',
+            'language_evaluated' => false, 'language_notice' => __('Provider probabilities are estimates, not proof of authorship. Language-specific accuracy has not been evaluated by HumixAi.'),
+            'quality' => $quality, 'message' => __('Local writing statistics only. No external authorship scan was performed.'),
         ];
     }
 
@@ -59,11 +60,11 @@ class AiDetectorService
         if ($result['character_count'] > $settings['max_characters']) {
             return array_replace($result, ['status' => 'error', 'message' => "The text exceeds the {$settings['max_characters']}-character scan limit. No truncated scan was performed."]);
         }
-        if (!in_array($result['language'], $settings['supported_languages'], true)) {
-            return array_replace($result, ['status' => 'unsupported_language', 'message' => 'Authorship detection is not enabled for this language. Local writing statistics do not establish authorship.']);
+        if (($result['quality']['language_mismatch'] ?? false) || !in_array($result['language'], $settings['supported_languages'], true)) {
+            return array_replace($result, ['status' => 'unsupported_language', 'message' => __('Authorship detection is not enabled for this language. Local writing statistics do not establish authorship.')]);
         }
         if (!$settings['configured']) {
-            return array_replace($result, ['message' => 'The AI detection provider is not configured. Only local writing statistics are available.']);
+            return array_replace($result, ['message' => __('The AI detection provider is not configured. Only local writing statistics are available.')]);
         }
         $payload = ['document' => $text];
         if ($settings['model_version']) {
@@ -83,24 +84,24 @@ class AiDetectorService
             $body = $response->json();
             $document = is_array($body) ? ($body['documents'][0] ?? null) : null;
             if (!is_array($document)) {
-                return array_replace($result, ['status' => 'error', 'message' => 'The detection provider returned an invalid result. No authorship score is available.']);
+                return array_replace($result, ['status' => 'error', 'message' => __('The detection provider returned an invalid result. No authorship score is available.')]);
             }
             $probabilities = [];
             foreach (['human', 'mixed', 'ai'] as $class) {
                 $value = $document['class_probabilities'][$class] ?? null;
                 if (!is_numeric($value) || !is_finite((float) $value) || $value < 0 || $value > 1) {
-                    return array_replace($result, ['status' => 'error', 'message' => 'The detection provider returned incomplete probabilities. No authorship score is available.']);
+                    return array_replace($result, ['status' => 'error', 'message' => __('The detection provider returned incomplete probabilities. No authorship score is available.')]);
                 }
                 $probabilities[$class] = round((float) $value * 100, 2);
             }
             if (abs(array_sum($probabilities) - 100) > 1) {
-                return array_replace($result, ['status' => 'error', 'message' => 'The detection provider returned inconsistent probabilities. No authorship score is available.']);
+                return array_replace($result, ['status' => 'error', 'message' => __('The detection provider returned inconsistent probabilities. No authorship score is available.')]);
             }
             $classification = match ($document['predicted_class'] ?? $document['document_classification'] ?? null) {
                 'ai', 'AI_ONLY' => 'AI_ONLY', 'mixed', 'MIXED' => 'MIXED', 'human', 'HUMAN_ONLY' => 'HUMAN_ONLY', default => null,
             };
             if ($classification === null) {
-                return array_replace($result, ['status' => 'error', 'message' => 'The detection provider returned an unknown classification. No authorship score is available.']);
+                return array_replace($result, ['status' => 'error', 'message' => __('The detection provider returned an unknown classification. No authorship score is available.')]);
             }
             $confidence = $document['confidence_category'] ?? null;
             return array_replace($result, [
@@ -111,11 +112,11 @@ class AiDetectorService
                 'classification' => $classification, 'class_probabilities' => $probabilities,
                 'confidence' => in_array($confidence, ['high', 'medium', 'low'], true) ? $confidence : null,
                 'sentences' => $this->mapSentences($text, $document['sentences'] ?? []),
-                'message' => 'Provider probabilities are estimates, not proof of authorship. Review the three classes and the writing context together.',
+                'message' => __('Provider probabilities are estimates, not proof of authorship. Review the three classes and the writing context together.'),
             ]);
         } catch (Throwable) {
             // Never expose request URLs, credentials, submitted text or provider bodies.
-            return array_replace($result, ['status' => 'unavailable', 'message' => 'The detection provider could not be reached. Local writing statistics remain available.']);
+            return array_replace($result, ['status' => 'unavailable', 'message' => __('The detection provider could not be reached. Local writing statistics remain available.')]);
         }
     }
 

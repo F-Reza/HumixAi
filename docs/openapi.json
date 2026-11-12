@@ -658,6 +658,10 @@
                       "auto",
                       "en",
                       "bn",
+                      "hi",
+                      "ur",
+                      "ar",
+                      "ne",
                       "es",
                       "fr",
                       "de",
@@ -1732,6 +1736,19 @@
                   "file": {
                     "type": "string",
                     "format": "binary"
+                  },
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "en",
+                      "bn",
+                      "hi",
+                      "ur",
+                      "ar",
+                      "ne"
+                    ],
+                    "description": "Images require an explicit installed OCR language; auto is rejected for image OCR."
                   }
                 },
                 "required": [
@@ -1868,6 +1885,1931 @@
           }
         }
       }
+    },
+    "/admin/api/dashboard": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "GET /admin/api/dashboard",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        }
+      }
+    },
+    "/admin/api/users": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "GET /admin/api/users",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/users/{user}": {
+      "patch": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "PATCH /admin/api/users/{user}",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "locale": {
+                    "type": "string",
+                    "enum": [
+                      "en",
+                      "bn",
+                      "hi",
+                      "ur",
+                      "ar",
+                      "ne"
+                    ]
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "user",
+                      "admin",
+                      "super_admin"
+                    ]
+                  },
+                  "suspended": {
+                    "type": "boolean"
+                  },
+                  "quota_override": {
+                    "type": "integer",
+                    "nullable": true,
+                    "minimum": 0,
+                    "maximum": 1000000
+                  },
+                  "current_password": {
+                    "type": "string",
+                    "writeOnly": true,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "current_password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/users/{user}/revoke-access": {
+      "post": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "POST /admin/api/users/{user}/revoke-access",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "current_password": {
+                    "type": "string",
+                    "writeOnly": true,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "current_password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/users/{user}/usage-adjustments": {
+      "post": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "POST /admin/api/users/{user}/usage-adjustments",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "current_password": {
+                    "type": "string",
+                    "writeOnly": true,
+                    "maxLength": 128
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "words_delta": {
+                    "type": "integer",
+                    "minimum": -1000000,
+                    "maximum": 1000000
+                  },
+                  "reason": {
+                    "type": "string",
+                    "minLength": 5,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "current_password",
+                  "date",
+                  "words_delta",
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/jobs": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "GET /admin/api/jobs",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/jobs/{job}/cancel": {
+      "post": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "POST /admin/api/jobs/{job}/cancel",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "job",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/settings": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "GET /admin/api/settings",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "PATCH /admin/api/settings",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "current_password": {
+                    "type": "string",
+                    "writeOnly": true,
+                    "maxLength": 128
+                  },
+                  "settings": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "allow_registration": {
+                        "type": "boolean"
+                      },
+                      "url_import_enabled": {
+                        "type": "boolean"
+                      },
+                      "daily_word_limit": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1000000
+                      },
+                      "max_batch_size": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 50
+                      },
+                      "max_characters": {
+                        "type": "integer",
+                        "minimum": 100,
+                        "maximum": 60000
+                      },
+                      "job_retention_hours": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 720
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "current_password",
+                  "settings"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/providers": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "GET /admin/api/providers",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        }
+      }
+    },
+    "/admin/api/providers/{provider}": {
+      "put": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "PUT /admin/api/providers/{provider}",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "current_password": {
+                    "type": "string",
+                    "writeOnly": true,
+                    "maxLength": 128
+                  },
+                  "api_key": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 4096,
+                    "writeOnly": true
+                  },
+                  "clear": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "current_password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/api/audit": {
+      "get": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "GET /admin/api/audit",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        ]
+      }
+    },
+    "/admin/api/maintenance/prune": {
+      "post": {
+        "tags": [
+          "Administration"
+        ],
+        "summary": "POST /admin/api/maintenance/prune",
+        "description": "Session-only administration. Super administrator required for settings/provider changes and privileged user changes. Sensitive mutations require current_password. Secrets and document bodies are not returned.",
+        "security": [
+          {
+            "adminSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation completed; lists are paginated."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Administrator permission denied."
+          },
+          "422": {
+            "description": "Validation or current password failed."
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "current_password": {
+                    "type": "string",
+                    "writeOnly": true,
+                    "maxLength": 128
+                  }
+                },
+                "required": [
+                  "current_password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/locale": {
+      "patch": {
+        "tags": [
+          "Localization"
+        ],
+        "summary": "Save interface locale",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Locale saved or public catalog returned."
+          },
+          "422": {
+            "description": "Unsupported locale."
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "locale"
+                ],
+                "properties": {
+                  "locale": {
+                    "type": "string",
+                    "enum": [
+                      "en",
+                      "bn",
+                      "hi",
+                      "ur",
+                      "ar",
+                      "ne"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/localization/catalog": {
+      "get": {
+        "tags": [
+          "Localization"
+        ],
+        "summary": "Read a public interface catalog",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Locale saved or public catalog returned."
+          },
+          "422": {
+            "description": "Unsupported locale."
+          }
+        },
+        "parameters": [
+          {
+            "name": "locale",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "bn",
+                "hi",
+                "ur",
+                "ar",
+                "ne"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "/forgot-password": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /forgot-password",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "POST /forgot-password",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/reset-password/{token}": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /reset-password/{token}",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/reset-password": {
+      "post": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "POST /reset-password",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/account/security": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /account/security",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/email/verification-notification": {
+      "post": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "POST /email/verification-notification",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/email/verify/{id}/{hash}": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /email/verify/{id}/{hash}",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hash",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/voice-profiles": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /voice-profiles",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "POST /voice-profiles",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/voice-profiles/{id}": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /voice-profiles/{id}",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "PUT /voice-profiles/{id}",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "DELETE /voice-profiles/{id}",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/voice-profiles/{id}/edit": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /voice-profiles/{id}/edit",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/website-checks": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /website-checks",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "POST /website-checks",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/website-checks/{id}": {
+      "patch": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "PATCH /website-checks/{id}",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "DELETE /website-checks/{id}",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/website-checks/{id}/run": {
+      "post": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "POST /website-checks/{id}/run",
+        "description": "Browser workflow; see docs/blueprint-expansion.md for exact form fields, explicit consent requirements and limits. Email verification requires an expiring relative URL signature. Profile details are owner-only. Scheduled checks use public-page retrieval with normal word allowances.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-TOKEN",
+            "in": "header",
+            "description": "Or use the native form _token field.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page or owner-only profile JSON."
+          },
+          "302": {
+            "description": "Native form redirect; flash status/errors are in the session."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account or invalid verification signature."
+          },
+          "404": {
+            "description": "Resource not owned or not found."
+          },
+          "409": {
+            "description": "Scheduled check is paused or running."
+          },
+          "422": {
+            "description": "Validation failed."
+          },
+          "503": {
+            "description": "Required optional service not configured."
+          }
+        }
+      }
+    },
+    "/sitemap": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /sitemap",
+        "description": "Render the current account-bound preview or sitemap entry form.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML preview or JSON download."
+          },
+          "302": {
+            "description": "Native form redirect."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account."
+          },
+          "422": {
+            "description": "Invalid XML, URL, selection, consent or expired preview."
+          },
+          "429": {
+            "description": "Rate limited."
+          }
+        }
+      }
+    },
+    "/sitemap/preview": {
+      "post": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "POST /sitemap/preview",
+        "description": "Retrieve one bounded XML sitemap, save a 15-minute account-bound allowlist in the session, and redirect to /sitemap. No listed page or AI provider is contacted.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML preview or JSON download."
+          },
+          "302": {
+            "description": "Native form redirect."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account."
+          },
+          "422": {
+            "description": "Invalid XML, URL, selection, consent or expired preview."
+          },
+          "429": {
+            "description": "Rate limited."
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-TOKEN",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Or native form _token."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "maxLength": 2048
+                  }
+                },
+                "required": [
+                  "url"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sitemap/schedule": {
+      "post": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "POST /sitemap/schedule",
+        "description": "Schedule selected allowlisted pages after explicit recurring-processing consent. At most 10 schedules total per account; existing matching schedules remain unchanged.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML preview or JSON download."
+          },
+          "302": {
+            "description": "Native form redirect."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account."
+          },
+          "422": {
+            "description": "Invalid XML, URL, selection, consent or expired preview."
+          },
+          "429": {
+            "description": "Rate limited."
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-TOKEN",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Or native form _token."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "nonce": {
+                    "type": "string"
+                  },
+                  "selected": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 199
+                    }
+                  },
+                  "language": {
+                    "type": "string",
+                    "enum": [
+                      "en",
+                      "bn",
+                      "hi",
+                      "ur",
+                      "ar",
+                      "ne"
+                    ]
+                  },
+                  "frequency": {
+                    "type": "string",
+                    "enum": [
+                      "daily",
+                      "weekly"
+                    ]
+                  },
+                  "processing_consent": {
+                    "type": "boolean",
+                    "const": true
+                  }
+                },
+                "required": [
+                  "nonce",
+                  "selected",
+                  "language",
+                  "frequency",
+                  "processing_consent"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/website-checks/export": {
+      "get": {
+        "tags": [
+          "Account essentials"
+        ],
+        "summary": "GET /website-checks/export",
+        "description": "Download owned website-check metadata and latest individual reports as JSON. No averaged website authorship score is produced.",
+        "security": [
+          {
+            "workspaceSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML preview or JSON download."
+          },
+          "302": {
+            "description": "Native form redirect."
+          },
+          "401": {
+            "description": "Sign in required."
+          },
+          "403": {
+            "description": "Inactive account."
+          },
+          "422": {
+            "description": "Invalid XML, URL, selection, consent or expired preview."
+          },
+          "429": {
+            "description": "Rate limited."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1876,6 +3818,18 @@
         "type": "http",
         "scheme": "bearer",
         "description": "A scoped HumixAi workspace API token. Available scopes: detect, humanize, jobs, documents. x-required-scopes documents static scopes; job actions and document_id add scopes at runtime."
+      },
+      "adminSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "humixai_session",
+        "description": "Browser session of an active admin or super_admin. Mutations also require X-CSRF-TOKEN. Bearer tokens do not authorize administration."
+      },
+      "workspaceSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "humixai_session",
+        "description": "Active account browser session. Native form mutations require CSRF protection. Not a bearer-token API."
       }
     },
     "schemas": {
@@ -1983,6 +3937,10 @@
               "auto",
               "en",
               "bn",
+              "hi",
+              "ur",
+              "ar",
+              "ne",
               "es",
               "fr",
               "de",
@@ -2049,6 +4007,11 @@
             ],
             "format": "uuid",
             "description": "For external processing routes, optional owned document also requires documents scope. Records a revision only when current history preference allows it; does not overwrite a newer draft. Local style analysis does not persist documents."
+          },
+          "voice_preferences": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Optional audience/style preferences; treated as advisory data, not instructions overriding preservation."
           }
         },
         "required": [

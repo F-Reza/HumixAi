@@ -17,7 +17,7 @@ class AuthController extends Controller
     public function register(Request $request, UsageService $usage): JsonResponse
     {
         if (!config('studio.allow_registration', true)) {
-            return response()->json(['success' => false, 'message' => 'Registration is not available on this workspace.'], 403);
+            return response()->json(['success' => false, 'message' => __('Registration is not available on this workspace.')], 403);
         }
         $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
         $data = $request->validate([
@@ -26,10 +26,11 @@ class AuthController extends Controller
         ]);
         $key = 'registration:'.hash('sha256', (string) $request->ip());
         if (RateLimiter::tooManyAttempts($key, 5)) {
-            return response()->json(['success' => false, 'message' => 'Too many registrations. Try again later.'], 429);
+            return response()->json(['success' => false, 'message' => __('Too many registrations. Try again later.')], 429);
         }
         RateLimiter::hit($key, 3600);
         $user = User::create(['name' => trim($data['name']), 'email' => $data['email'], 'password' => Hash::make($data['password'])]);
+        $user->forceFill(['locale'=>\App\Support\Locales::normalize($request->session()->get('locale'))])->save();
         Auth::login($user);
         $request->session()->regenerate();
         return response()->json(['success' => true, 'data' => ['user' => $user, 'usage' => $usage->summary($user)]], 201);
@@ -41,29 +42,32 @@ class AuthController extends Controller
         $data = $request->validate(['email' => 'required|email:rfc|max:254', 'password' => 'required|string|max:128']);
         $key = 'login:'.hash('sha256', $request->ip().'|'.$data['email']);
         if (RateLimiter::tooManyAttempts($key, 5)) {
-            return response()->json(['success' => false, 'message' => 'Too many login attempts. Try again in a minute.'], 429);
+            return response()->json(['success' => false, 'message' => __('Too many login attempts. Try again in a minute.')], 429);
         }
         if (!Auth::attempt($data)) {
             RateLimiter::hit($key, 60);
             throw ValidationException::withMessages(['email' => ['The email or password is incorrect.']]);
         }
+        if (Auth::user()->suspended_at) { Auth::logout(); abort(403, __('This account is suspended.')); }
         RateLimiter::clear($key);
         $request->session()->regenerate();
         return response()->json(['success' => true, 'data' => ['user' => $request->user(), 'usage' => $usage->summary($request->user())]]);
     }
 
-    public function logout(Request $request): JsonResponse
+    public function logout(Request $request): JsonResponse|\Illuminate\Http\RedirectResponse
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return response()->json(['success' => true, 'data' => ['logged_out' => true]]);
+        return $request->expectsJson()
+            ? response()->json(['success' => true, 'data' => ['logged_out' => true]])
+            : redirect()->route('login');
     }
 
     public function me(Request $request, UsageService $usage): JsonResponse
     {
         if (!$request->user()) {
-            return response()->json(['success' => false, 'message' => 'Sign in to use your workspace.', 'data' => ['user' => null]], 401);
+            return response()->json(['success' => false, 'message' => __('Sign in to use your workspace.'), 'data' => ['user' => null]], 401);
         }
         return response()->json(['success' => true, 'data' => ['user' => $request->user(), 'usage' => $usage->summary($request->user())]]);
     }

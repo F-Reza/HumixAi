@@ -39,7 +39,14 @@ class AccountController extends Controller
         if (!Hash::check($request->input('password'), $user->password)) {
             throw ValidationException::withMessages(['password' => ['The password is incorrect.']]);
         }
-        app(\App\Services\BillingService::class)->deleteAccountSafely($user, fn () => DB::transaction(fn () => $user->delete()));
+        \App\Http\Controllers\AdminController::guardLastAdmin($user);
+        app(\App\Services\BillingService::class)->deleteAccountSafely($user, fn () => DB::transaction(function () use ($user) {
+            \App\Models\User::where('role', 'super_admin')->orderBy('id')->lockForUpdate()->get();
+            $fresh = \App\Models\User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            \App\Http\Controllers\AdminController::guardLastAdmin($fresh);
+            DB::table('password_reset_tokens')->where('email',$fresh->email)->delete();
+            $fresh->delete();
+        }));
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

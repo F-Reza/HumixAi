@@ -16,7 +16,7 @@ class GeminiApiService
     public function __construct(?string $apiKey = null, ?string $model = null, ?string $baseUrl = null)
     {
         $this->apiKey = $apiKey ?? config('services.gemini.api_key');
-        $this->model = $model ?? (string) config('services.gemini.model', 'gemini-3.8-flash');
+        $this->model = $model ?? (string) config('services.gemini.model', 'gemini-3.1-flash-lite');
         $this->baseUrl = rtrim($baseUrl ?? (string) config('services.gemini.base_url', 'https://generativelanguage.googleapis.com/v1beta'), '/');
     }
 
@@ -41,10 +41,10 @@ class GeminiApiService
         try {
             $result = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
-            throw new HumanizationException('The writing provider returned an invalid response. Please try again.', 'generation');
+            throw new HumanizationException(__('The writing provider returned an invalid response. Please try again.'), 'generation');
         }
         if (!is_array($result)) {
-            throw new HumanizationException('The writing provider returned an invalid response. Please try again.', 'generation');
+            throw new HumanizationException(__('The writing provider returned an invalid response. Please try again.'), 'generation');
         }
         return $result;
     }
@@ -52,7 +52,7 @@ class GeminiApiService
     private function request(string $prompt, ?string $instruction, float $temperature, bool $json): string
     {
         if (!$this->isConfigured()) {
-            throw new HumanizationException('The writing provider is not configured. Add its API key in server configuration to enable rewriting.', 'generation');
+            throw new HumanizationException(__('The writing provider is not configured. Add its API key in server configuration to enable rewriting.'), 'generation');
         }
         $payload = ['contents' => [['role' => 'user', 'parts' => [['text' => $prompt]]]],
             'generationConfig' => ['maxOutputTokens' => max(256, (int) config('services.gemini.max_output_tokens', 8192))]];
@@ -72,14 +72,14 @@ class GeminiApiService
                 ->connectTimeout(10)->timeout(max(1, (int) config('services.gemini.timeout', 60)))
                 ->post($this->baseUrl.'/models/'.rawurlencode($this->model).':generateContent', $payload);
         } catch (Throwable) {
-            throw new HumanizationException('The writing provider could not be reached. Your original text is unchanged.', 'generation');
+            throw new HumanizationException(__('The writing provider could not be reached. Your original text is unchanged.'), 'generation');
         }
         if (!$response->successful()) {
-            throw new HumanizationException('The writing provider could not complete the request. Check server configuration and allowance, then try again.', 'generation');
+            throw new HumanizationException(__('The writing provider could not complete the request. Check server configuration and allowance, then try again.'), 'generation');
         }
         $candidate = $response->json('candidates.0');
         if (!is_array($candidate) || ($candidate['finishReason'] ?? null) !== 'STOP') {
-            throw new HumanizationException('The writing provider did not return a complete draft. Please try again with a shorter passage.', 'generation');
+            throw new HumanizationException(__('The writing provider did not return a complete draft. Please try again with a shorter passage.'), 'generation');
         }
         $parts = [];
         foreach ($candidate['content']['parts'] ?? [] as $part) {
@@ -89,7 +89,7 @@ class GeminiApiService
         }
         $text = trim(implode('', $parts));
         if ($text === '') {
-            throw new HumanizationException('The writing provider returned an empty draft. Your original text is unchanged.', 'generation');
+            throw new HumanizationException(__('The writing provider returned an empty draft. Your original text is unchanged.'), 'generation');
         }
         return $text;
     }

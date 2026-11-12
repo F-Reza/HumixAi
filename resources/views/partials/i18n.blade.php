@@ -1,0 +1,1 @@
+<script type="application/json" id="humixTranslations">{!! json_encode(app(\App\Services\LocalizationService::class)->catalog(app()->getLocale()), JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_UNESCAPED_UNICODE) !!}</script><script src="{{ asset('assets/i18n.js') }}" defer></script>

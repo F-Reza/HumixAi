@@ -21,6 +21,30 @@ class HumanizerPipelineTest extends TestCase
         Http::preventStrayRequests();
     }
 
+    public function test_plain_prose_prompt_does_not_suggest_protection_markers(): void
+    {
+        Http::fake(function (Request $request) {
+            $instruction = $request['systemInstruction']['parts'][0]['text'];
+            $this->assertStringNotContainsString('__HUMIX_LOCK_', $instruction);
+            $this->assertStringContainsString('no protected-content markers', $instruction);
+            return Http::response($this->writingResponse('Clear writing makes complex ideas easier to understand.'));
+        });
+        $result = $this->service()->humanize('Good writing helps readers understand complex ideas.', 'professional', false);
+        $this->assertTrue($result['preservation']['passed']);
+    }
+
+    public function test_protected_markers_include_meaning_reference_without_relaxing_restore_checks(): void
+    {
+        Http::fake(function (Request $request) {
+            $input=json_decode($request['contents'][0]['parts'][0]['text'],true);
+            $this->assertContains('not',array_values($input['protected_reference_only']));
+            foreach(array_keys($input['protected_reference_only']) as $marker)$this->assertStringContainsString($marker,$input['source_text']);
+            return Http::response($this->writingResponse($input['source_text']));
+        });
+        $result=$this->service()->humanize('This proposal is not approved for publication.', 'professional', false);
+        $this->assertSame('This proposal is not approved for publication.',$result['humanized_text']);
+    }
+
     private function service(): AiHumanizerService
     {
         return new AiHumanizerService(new GeminiApiService(), new AiDetectorService());

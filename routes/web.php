@@ -3,16 +3,26 @@
 use App\Http\Controllers\{AccountController, AiToolController, AuthController, DocumentController, ImportController, ShareController, StudioJobController, TokenController};
 use Illuminate\Support\Facades\Route;
 
+Route::get('/cc', function () {
+    Artisan::call('cache:clear');
+    Artisan::call('view:clear');
+    Artisan::call('route:clear');
+    Artisan::call('config:clear');
+    Artisan::call('optimize:clear');
+    return redirect()->back()->with('success', 'Cache cleared successfully');
+})->name('clear-all');
+
+
 Route::get('/', [AiToolController::class, 'index'])->name('home');
 Route::get('/ai-tools', [AiToolController::class, 'index'])->name('ai-tools.index');
 Route::get('/login', fn () => view('auth.login'))->middleware('guest')->name('login');
 Route::get('/register', fn () => view('auth.register'))->middleware('guest')->name('register');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth');
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:auth');
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('workspace')->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth');
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth');
-Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('workspace');
+Route::post('/auth/logout', [AuthController::class, 'logout']);
 Route::get('/auth/me', [AuthController::class, 'me']);
 Route::get('/ai-tools/status', [AiToolController::class, 'status'])->name('ai-tools.status');
 Route::post('/ai-tools/style', [AiToolController::class, 'style'])->middleware('throttle:studio');
@@ -75,3 +85,11 @@ Route::middleware('workspace')->group(function () {
     Route::get('/teams/{team}/documents/{document}/comments', [\App\Http\Controllers\TeamController::class, 'comments']);
     Route::post('/teams/{team}/documents/{document}/comments', [\App\Http\Controllers\TeamController::class, 'comment']);
 });
+
+Route::patch('/locale', [\App\Http\Controllers\LocaleController::class, 'update']);
+Route::get('/localization/catalog', [\App\Http\Controllers\LocaleController::class, 'catalog']);
+require __DIR__.'/admin.php';
+
+require __DIR__.'/account-essentials.php';
+
+Route::post('/ai-tools/local-patterns', [AiToolController::class, 'localPatterns'])->middleware('throttle:studio');

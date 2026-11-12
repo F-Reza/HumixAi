@@ -14,7 +14,7 @@ class UsageService
     public function dailyLimit(User|int $user): int
     {
         $user = $user instanceof User ? $user : User::findOrFail($user);
-        return max(0, (int) ($user->daily_word_limit ?? config('studio.daily_word_limit', 10000)));
+        return max(0, (int) ($user->quota_override ?? $user->daily_word_limit ?? config('studio.daily_word_limit', 10000)));
     }
 
     public function summary(User|int $user): array

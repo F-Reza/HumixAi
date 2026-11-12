@@ -21,7 +21,7 @@ class StudioBatchController extends Controller
             'items.*.document_id' => ['nullable', 'uuid'],
             'action' => ['required', Rule::in(['detect', 'humanize', 'combo'])],
             'mode' => ['sometimes', Rule::in(['professional', 'standard', 'academic', 'casual', 'marketing'])],
-            'language' => ['sometimes', Rule::in(['auto', 'en', 'bn', 'es', 'fr', 'de', 'pt'])],
+            'language' => ['sometimes', Rule::in(['auto', 'en', 'bn', 'hi', 'ur', 'ar', 'ne', 'es', 'fr', 'de', 'pt'])],
             'strength' => ['sometimes', Rule::in(['light', 'balanced', 'strong'])],
             'length' => ['sometimes', Rule::in(['shorter', 'similar', 'longer'])],
             'external_processing_consent' => ['required', 'accepted'],

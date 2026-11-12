@@ -28,7 +28,7 @@ class PlagiarismReviewService
             'status' => 'unavailable', 'provider' => 'walter', 'score_type' => 'similarity',
             'similarity_score' => null, 'scan_id' => null, 'source_hash' => hash('sha256', $text),
             'checked_at' => null, 'matches' => [],
-            'summary' => 'Web similarity checking is not configured for this workspace.',
+            'summary' => __('Web similarity checking is not configured for this workspace.'),
             'limitations' => [
                 'Textual similarity is not an AI-authorship score or proof of plagiarism or academic misconduct.',
                 'Matches depend on the provider’s web coverage and may omit paywalled, private, recent or unindexed sources.',
@@ -37,10 +37,10 @@ class PlagiarismReviewService
             ],
         ];
         if (!mb_check_encoding($text, 'UTF-8') || trim($text) === '' || mb_strlen($text, 'UTF-8') < 50) {
-            return array_replace($base, ['status' => 'insufficient_text', 'summary' => 'Add at least 50 characters of complete text for a web-similarity scan.']);
+            return array_replace($base, ['status' => 'insufficient_text', 'summary' => __('Add at least 50 characters of complete text for a web-similarity scan.')]);
         }
         if (mb_strlen($text, 'UTF-8') > (int) config('studio.max_characters', 60000) || $this->providerWordCount($text) > 25000) {
-            return array_replace($base, ['status' => 'error', 'summary' => 'The text exceeds the scan limits. No truncated scan was submitted.']);
+            return array_replace($base, ['status' => 'error', 'summary' => __('The text exceeds the scan limits. No truncated scan was submitted.')]);
         }
         if (!$this->capabilities()['configured']) { return $base; }
         try {
@@ -59,16 +59,16 @@ class PlagiarismReviewService
                 return array_replace($base, ['summary' => $message]);
             }
             if (strlen($response->body()) > 2 * 1024 * 1024) {
-                return array_replace($base, ['status' => 'error', 'summary' => 'The provider response exceeded the safe response limit. No score was reported.']);
+                return array_replace($base, ['status' => 'error', 'summary' => __('The provider response exceeded the safe response limit. No score was reported.')]);
             }
             $data = $response->json();
             $normalized = is_array($data) ? $this->normalize($data, $text) : null;
             if ($normalized === null) {
-                return array_replace($base, ['status' => 'error', 'summary' => 'The provider returned an invalid or incomplete similarity result. No score was reported.']);
+                return array_replace($base, ['status' => 'error', 'summary' => __('The provider returned an invalid or incomplete similarity result. No score was reported.')]);
             }
             return array_replace($base, $normalized, ['status' => 'completed', 'checked_at' => now()->utc()->toIso8601String()]);
         } catch (Throwable) {
-            return array_replace($base, ['summary' => 'The similarity provider could not be reached. Your text has not been assigned a similarity score.']);
+            return array_replace($base, ['summary' => __('The similarity provider could not be reached. Your text has not been assigned a similarity score.')]);
         }
     }
 

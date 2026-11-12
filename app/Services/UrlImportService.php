@@ -27,7 +27,7 @@ class UrlImportService
             'redirect_limit' => 3, 'authenticated_pages' => false, 'javascript_rendering' => false];
     }
 
-    public function preview(string $url): array
+    protected function download(string $url): array
     {
         if (!$this->capabilities()['url']) { $this->invalid('URL import is unavailable on this server. Upload a TXT or DOCX file instead.'); }
         $visited = [];
@@ -58,21 +58,30 @@ class UrlImportService
             }
             if ($response['status'] !== 200) { $this->invalid('The page did not return readable public content. Sign-in and error pages are not supported.'); }
             $type = strtolower(trim(explode(';', $response['content_type'] ?? '')[0]));
-            if (!in_array($type, ['text/html', 'text/plain'], true)) { $this->invalid('Only HTML pages and plain text URLs are supported.'); }
+            if (!in_array($type, $this->contentTypes(), true)) { $this->invalid(__('The downloaded content type is not supported for this import.')); }
             $body = $response['body'] ?? '';
             if (!is_string($body) || strlen($body) > $this->maxBytes()) { $this->invalid('The downloaded page is too large.'); }
             if (!mb_check_encoding($body, 'UTF-8') || str_contains($body, "\0")) { $this->invalid('The page must contain UTF-8 text. Download it as a UTF-8 text file instead.'); }
-            [$text, $title] = $type === 'text/html' ? $this->htmlText($body) : [trim($body), $target['host']];
-            if (trim($text) === '') { $this->invalid('No readable page text was found. JavaScript-only pages require a manual text copy.'); }
-            if (mb_strlen($text, 'UTF-8') > (int) config('studio.max_characters', 60000)) { $this->invalid('The page text exceeds the document limit. Copy a smaller section instead.'); }
-            preg_match_all('/[\p{L}\p{N}][\p{L}\p{M}\p{N}\x{200C}\x{200D}\x{2019}\x{0027}-]*/u', $text, $matches);
-            return ['text' => $text, 'title' => mb_substr($title ?: $target['host'], 0, 200, 'UTF-8'),
-                'source_url' => $target['url'], 'format' => 'url', 'word_count' => count($matches[0]),
-                'character_count' => mb_strlen($text, 'UTF-8'), 'capabilities' => $this->capabilities(),
-                'warnings' => ['Review extracted text before scanning. Navigation, images and visual formatting may be omitted.',
-                    'This fetch does not run JavaScript or access signed-in pages. No analysis provider was contacted.']];
+            return ['body'=>$body, 'type'=>$type, 'target'=>$target];
         }
         $this->invalid('The page could not be imported.');
+    }
+
+    protected function contentTypes(): array { return ['text/html', 'text/plain']; }
+
+    public function preview(string $url): array
+    {
+        $download = $this->download($url);
+        ['body'=>$body, 'type'=>$type, 'target'=>$target] = $download;
+        [$text, $title] = $type === 'text/html' ? $this->htmlText($body) : [trim($body), $target['host']];
+        if (trim($text) === '') { $this->invalid('No readable page text was found. JavaScript-only pages require a manual text copy.'); }
+        if (mb_strlen($text, 'UTF-8') > (int) config('studio.max_characters', 60000)) { $this->invalid('The page text exceeds the document limit. Copy a smaller section instead.'); }
+        preg_match_all('/[\p{L}\p{N}][\p{L}\p{M}\p{N}\x{200C}\x{200D}\x{2019}\x{0027}-]*/u', $text, $matches);
+        return ['text' => $text, 'title' => mb_substr($title ?: $target['host'], 0, 200, 'UTF-8'),
+            'source_url' => $target['url'], 'format' => 'url', 'word_count' => count($matches[0]),
+            'character_count' => mb_strlen($text, 'UTF-8'), 'capabilities' => $this->capabilities(),
+            'warnings' => ['Review extracted text before scanning. Navigation, images and visual formatting may be omitted.',
+                'This fetch does not run JavaScript or access signed-in pages. No analysis provider was contacted.']];
     }
 
     protected function resolveAddresses(string $host, int $depth = 0, array $seen = []): array
@@ -106,7 +115,7 @@ class UrlImportService
             $response = $client->request('GET', $url, [
                 'allow_redirects' => false, 'http_errors' => false, 'verify' => true, 'proxy' => '',
                 'connect_timeout' => 5, 'timeout' => 15, 'decode_content' => false, 'sink' => $bounded,
-                'headers' => ['Accept' => 'text/html, text/plain;q=0.9', 'Accept-Encoding' => 'identity', 'User-Agent' => 'HumixAi-Text-Import/1.0'],
+                'headers' => ['Accept' => implode(', ', $this->contentTypes()), 'Accept-Encoding' => 'identity', 'User-Agent' => 'HumixAi-Text-Import/1.0'],
                 'curl' => [CURLOPT_RESOLVE => [$host.':'.$port.':'.(str_contains($ip, ':') ? '['.$ip.']' : $ip)],
                     CURLOPT_PROXY => '', CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
                     CURLOPT_FOLLOWLOCATION => false],
@@ -118,7 +127,7 @@ class UrlImportService
                     if ($length !== '' && (!ctype_digit($length) || (int) $length > $max)) { throw new RuntimeException('Page exceeds download limit.'); }
                     if ($response->getStatusCode() === 200) {
                         $type = strtolower(trim(explode(';', $response->getHeaderLine('Content-Type'))[0]));
-                        if (!in_array($type, ['text/html', 'text/plain'], true)) { throw new RuntimeException('Unsupported page content type.'); }
+                        if (!in_array($type, $this->contentTypes(), true)) { throw new RuntimeException('Unsupported page content type.'); }
                     }
                 },
             ]);
@@ -128,7 +137,7 @@ class UrlImportService
         } finally { $bounded->close(); }
     }
 
-    private function target(string $url): array
+    protected function target(string $url): array
     {
         if (strlen($url) > 4096 || preg_match('/[\x00-\x20\x7F\\\\]/', $url)) { $this->invalid('Enter a valid public HTTP or HTTPS URL without spaces or credentials.'); }
         $parts = parse_url($url);
@@ -209,5 +218,5 @@ class UrlImportService
     }
 
     private function maxBytes(): int { return max(1024, min(2 * 1024 * 1024, (int) config('studio.url_import_max_bytes', 1024 * 1024))); }
-    private function invalid(string $message): never { throw ValidationException::withMessages(['url' => [$message]]); }
+    protected function invalid(string $message): never { throw ValidationException::withMessages(['url' => [$message]]); }
 }

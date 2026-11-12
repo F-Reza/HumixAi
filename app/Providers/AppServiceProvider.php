@@ -14,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(\App\Services\Admin\SystemSettingsService::class);
     }
 
     /**
@@ -22,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Queue::before(function () {
+            app(\App\Services\Admin\SystemSettingsService::class)->apply();
+            app()->setLocale('en');
+        });
         RateLimiter::for('studio', fn (Request $request) => Limit::perMinute(20)->by($request->user()?->id ?? $request->ip()));
         RateLimiter::for('studio-api', fn (Request $request) => Limit::perMinute(30)->by($request->user()?->id ?? $request->ip()));
         RateLimiter::for('auth', fn (Request $request) => [

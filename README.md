@@ -156,3 +156,33 @@ composer validate --no-check-publish
 PHP tests force an in-memory database, blank provider keys and blocked stray HTTP. Provider, payment and URL scenarios use fakes. These are functional/integration tests, not evidence of detector accuracy or guaranteed external-provider behavior. Run a representative held-out evaluation before publishing numerical accuracy claims.
 
 Browser visual verification was unavailable in this environment because Computer Use could not reliably verify the current browser URL. HTTP smoke checks and automated functional checks are recorded separately; no screenshot-based visual QA is claimed.
+
+## System Admin and languages
+
+English is the primary interface language; Bangla, Hindi, Urdu, Arabic and Nepali are available from the language selector. Interface and writing languages are independent. Arabic and Urdu use RTL layouts.
+
+After registering an account, promote it on your own server:
+
+```sh
+php artisan migrate --force
+php artisan humix:admin your-existing-account@example.com
+```
+
+Sign in and open `/admin` to manage users, access, quotas, jobs, settings, encrypted AI provider credentials and audit history. No default administrator credentials are created. Configure the GPTZero key in **AI providers** to enable live detection. See [admin and localization setup](docs/admin-and-localization.md).
+
+To create a missing administrator account directly, run `php artisan humix:admin admin@humix.com --create`. Enter the name and password in the terminal prompts; the password is hidden and must be confirmed. Existing accounts are promoted without resetting their passwords.
+
+## Blueprint expansion workflows
+
+- `/account/security`: email verification; `/forgot-password`: password recovery. Set SMTP and `ACCOUNT_EMAIL_ENABLED=true` to enable delivery.
+- `/voice-profiles`: opt-in encrypted personal/brand samples and editable audience/style preferences.
+- `/website-checks`: consented daily/weekly public-page scans with pause/resume/delete. Requires the database worker, scheduler and GPTZero key.
+- PNG/JPEG import: optional local OCR. Install Tesseract/language packs, set `TESSERACT_PATH` and enable `STUDIO_OCR_ENABLED`. Select the image language before importing.
+
+See [setup and boundaries](docs/blueprint-expansion.md). Run `php artisan migrate --force` on other deployments; local migrations are already applied.
+
+Publisher workflow: open `/sitemap` to preview XML sitemap pages or manually choose a child sitemap. Select pages and authorize their schedules within the 10-page account cap. `/website-checks/export` downloads your latest per-page reports as JSON. Preview does not run detector scans.
+
+Opt-in draft recording is available at `/writing-records` (also in the studio account panel). It includes encrypted snapshots, replay slider and JSON export; it does not certify authorship. Offline detector evaluation instructions: [docs/detector-evaluation.md](docs/detector-evaluation.md).
+
+WordPress connector: [installation guide](integrations/wordpress/README.md). Build the installable ZIP with `python integrations/wordpress/build.py`; server-side personal API token configuration and a running HumixAi queue worker are required.

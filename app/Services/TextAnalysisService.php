@@ -7,30 +7,54 @@ class TextAnalysisService
 {
     public function words(string $text): array
     {
-        preg_match_all('/[\p{L}\p{M}\p{N}]+(?:[\x{2019}\x{0027}-][\p{L}\p{M}\p{N}]+)*/u', $text, $matches);
+        preg_match_all('/[\p{L}\p{N}][\p{L}\p{M}\p{N}\x{200C}\x{200D}]*(?:[\x{2019}\x{0027}-][\p{L}\p{N}][\p{L}\p{M}\p{N}\x{200C}\x{200D}]*)*/u', $text, $matches);
         return $matches[0] ?? [];
     }
 
     public function language(string $text, string $requested = 'auto'): string
     {
-        if (preg_match('/[\x{0980}-\x{09FF}]/u', $text)) {
-            return 'bn';
+        return $this->languageInfo($text, $requested)['language'];
+    }
+
+    public function languageInfo(string $text, string $requested = 'auto'): array
+    {
+        $requested = $this->normalizeLanguage($requested);
+        $scripts = [];
+        foreach (['Latin', 'Bengali', 'Devanagari', 'Arabic'] as $script) {
+            if (preg_match('/(?=\p{L})\p{'.$script.'}/u', $text)) { $scripts[] = $script; }
         }
-        $requested = strtolower(trim($requested));
-        $requested = match ($requested) { 'english' => 'en', 'bengali', 'bangla' => 'bn', default => $requested };
-        if ($requested !== 'auto' && $requested !== '') {
-            return $requested;
+        preg_match_all('/\p{L}/u', $text, $letters);
+        $known = 0;
+        foreach (['Latin', 'Bengali', 'Devanagari', 'Arabic'] as $script) {
+            $known += preg_match_all('/(?=\p{L})\p{'.$script.'}/u', $text);
         }
-        // A Latin script assumption, not a trained language classifier.
-        if (preg_match('/\p{Latin}/u', $text) && !preg_match('/[^\p{Latin}\p{M}\p{N}\p{P}\p{S}\p{Z}\s]/u', $text)) {
-            return 'en';
+        if ($known < count($letters[0])) { $scripts[] = 'Other'; }
+        $expected = match ($requested) { 'en', 'es', 'fr', 'de', 'pt' => 'Latin', 'bn' => 'Bengali', 'hi', 'ne' => 'Devanagari', 'ur', 'ar' => 'Arabic', default => null };
+        $compatible = $expected !== null && ($scripts === [] || (in_array($expected, $scripts, true) && array_diff($scripts, [$expected, 'Latin']) === []));
+        if ($compatible && $requested !== 'auto') {
+            return ['language' => $requested, 'requested_language' => $requested, 'language_source' => 'requested', 'language_mismatch' => false, 'language_candidates' => [$requested], 'scripts' => $scripts];
         }
-        return 'und';
+        $nonLatin = array_values(array_diff($scripts, ['Latin']));
+        $candidates = match (true) {
+            $nonLatin === ['Bengali'] => ['bn'], $nonLatin === ['Devanagari'] => ['hi', 'ne'],
+            $nonLatin === ['Arabic'] => ['ar', 'ur'], $scripts === ['Latin'] => ['en'], default => [],
+        };
+        return ['language' => count($candidates) === 1 ? $candidates[0] : 'und', 'requested_language' => $requested,
+            'language_source' => count($candidates) === 1 ? 'script_hint' : 'undetermined',
+            'language_mismatch' => $requested !== 'auto' && !$compatible, 'language_candidates' => $candidates, 'scripts' => $scripts];
+    }
+
+    public function normalizeLanguage(string $language): string
+    {
+        return match (strtolower(trim($language))) {
+            '', 'auto' => 'auto', 'english' => 'en', 'bengali', 'bangla' => 'bn', 'hindi' => 'hi',
+            'urdu' => 'ur', 'arabic' => 'ar', 'nepali' => 'ne', default => strtolower(trim($language)),
+        };
     }
 
     public function sentences(string $text): array
     {
-        preg_match_all('/[.!?\x{0964}]+["\x{201D}\x{2019}\)\]]*(?=\s|$)|\r?\n+/u', $text, $boundaries, PREG_OFFSET_CAPTURE);
+        preg_match_all('/[.!?\x{061F}\x{06D4}\x{0964}\x{0965}]+["\x{201D}\x{2019}\x{00BB}\)\]]*(?=\s|$)|\r?\n+/u', $text, $boundaries, PREG_OFFSET_CAPTURE);
         $sentences = [];
         $cursor = 0;
         foreach ($boundaries[0] as [$ending, $offset]) {
@@ -77,7 +101,7 @@ class TextAnalysisService
             }
         }
         return [
-            'kind' => 'local-writing-statistics', 'language' => $this->language($text, $language),
+            'kind' => 'local-writing-statistics', ...$this->languageInfo($text, $language),
             'word_count' => count($words), 'character_count' => mb_strlen($text, 'UTF-8'),
             'sentence_count' => count($sentences),
             'paragraph_count' => trim($text) === '' ? 0 : count(preg_split('/\R\s*\R/u', trim($text), -1, PREG_SPLIT_NO_EMPTY)),
@@ -87,9 +111,9 @@ class TextAnalysisService
             'vocabulary_diversity' => count($words) ? round(count($frequency) / count($words), 3) : null,
             'repeated_words' => $repeated,
             'reading_time_seconds' => count($words) ? (int) ceil(count($words) / 200 * 60) : 0,
-            'notes' => ['Writing statistics describe style; they do not measure AI authorship.',
-                'Word counts use Unicode letter/number groups; reading time assumes 200 words per minute.',
-                'Automatic language selection recognizes Bengali script; other Latin text defaults to English unless you select a language.'],
+            'notes' => [__('Writing statistics describe style; they do not measure AI authorship.'),
+                __('Word counts use Unicode letter/number groups; reading time is a rough estimate of 200 words per minute, not a language-specific readability grade.'),
+                __('Script hints cannot distinguish Hindi from Nepali or Arabic from Urdu. Select the source language when it is known.')],
         ];
     }
 }

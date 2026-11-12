@@ -1,0 +1,1 @@
+<div class="locale-control"><label for="interfaceLocale">{{ __('Interface language') }}</label><select id="interfaceLocale" aria-label="{{ __('Interface language') }}">@foreach(\App\Support\Locales::all() as $code => $label)<option value="{{ $code }}" @selected(app()->getLocale() === $code)>{{ $label }}</option>@endforeach</select><span id="localeError" role="alert"></span></div>

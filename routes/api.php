@@ -7,6 +7,7 @@ Route::get('/health', fn () => response()->json(['status' => 'ok', 'service' => 
 Route::get('/v1/status', [AiToolController::class, 'status']);
 Route::post('/billing/webhook', [\App\Http\Controllers\BillingController::class, 'webhook']);
 Route::prefix('v1')->middleware(['api.token', 'throttle:studio-api'])->group(function () {
+    Route::post('/local-patterns', [AiToolController::class, 'localPatterns'])->middleware('api.token:detect');
     Route::post('/style', [AiToolController::class, 'style'])->middleware('api.token:detect');
     Route::post('/detect', [AiToolController::class, 'detect'])->middleware('api.token:detect');
     Route::post('/humanize', [AiToolController::class, 'humanize'])->middleware('api.token:rewrite');
