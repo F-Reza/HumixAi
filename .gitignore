@@ -14,3 +14,4 @@
 /storage/logs/*.log
 /storage/app/private/*
 !/storage/app/private/.gitignore
+Copy of env.txt
